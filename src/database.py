@@ -9,8 +9,7 @@ class Database:
     """
     A class used to connect to Postgres database
 
-    This class requires that 'psycopg2' be installed within the Python
-    environment you are running this script in.
+    This class requires that 'psycopg2' be installed.
 
     ...
 
