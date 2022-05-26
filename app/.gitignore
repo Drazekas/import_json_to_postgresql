@@ -2,5 +2,3 @@ venv/
 src/__pycache__/
 logfile.log
 Number of cities for Masovian Voivodeship in Poland.csv
-docker_set_up/
-TODO.txt
