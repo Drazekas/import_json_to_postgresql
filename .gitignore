@@ -1,0 +1,8 @@
+venv/
+src/__pycache__/
+logfile.log
+Number of cities for Masovian Voivodeship in Poland.csv
+app/src/__pycache__/__init__.cpython-310.pyc
+app/src/__pycache__/database.cpython-310.pyc
+app/src/__pycache__/logging_tools.cpython-310.pyc
+app/src/__pycache__/performance_tools.cpython-310.pyc

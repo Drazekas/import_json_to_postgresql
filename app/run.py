@@ -182,7 +182,7 @@ def number_of_cities(db:Database, *, country_name:str,
 @func_status
 def main() -> None:
     db_params:typing.Dict[str,str] = db_config(filename='database.ini', 
-                                            section='postgresql')
+                                            section='postgresql')                                          
     db = Database(**db_params)
     # 'import_data_to_db' can be commented if only select is needed
     import_data_to_db(db, data_path)
