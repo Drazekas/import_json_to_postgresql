@@ -1,9 +1,5 @@
 version: "3.8"
 
-networks:
-  my_network:
-    external: true
-
 services:
   postgres:
     image: postgres:latest
@@ -14,11 +10,7 @@ services:
     - POSTGRES_USER=postgres
     - POSTGRES_PASSWORD=secretpassword
     - POSTGRES_DB=postgres
-    networks:
-    - my_network
   app :
     container_name: my_app
     command: sleep infinity
-    networks:
-      - my_network
     build: ./app/
