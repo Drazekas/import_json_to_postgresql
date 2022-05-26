@@ -38,7 +38,7 @@ def func_status(func):
         time_start = perf_counter()
         wrapped_func = func(*args, **kwargs)
         time_end = perf_counter() - time_start
-        logger.info(f"""Exited function: {func.__name__} 
-                     with running time: {time_end:0.4} seconds""")
+        logger.info(f"""Exited function: {func.__name__} \
+with running time: {time_end:0.4} seconds""")
         return wrapped_func
     return wrapper
