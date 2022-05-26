@@ -17,12 +17,13 @@ data_path: str
 
 import ijson
 import typing
+import os
 from typing import Union
 from src.database import Database, db_config
 from src.logging_tools import func_status
 
 buff_size:int = 10000
-data_path:str = 'data\cities.json'
+data_path:str = os.path.join('data', 'cities.json')
 
 @func_status
 def create_db_structures(db:Database) -> None:
