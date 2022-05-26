@@ -1,11 +1,28 @@
-from src.database import Database, db_config
-from src.logging_tools import func_status
+"""Import json file to Postgres database 
+
+This script is intended for import json files to postgres database (in batches to limit RAM usage).
+This script also allows the user to create new tables and select data from database tables.
+
+This tool accepts .json files with array structure.
+
+This class requires that 'ijson' be installed.
+
+Variables
+---------
+buff_size: int
+    Buffer size (number of records) collecting data from importing file before import to database
+data_path: str
+    Import file path
+"""
+
 import ijson
 import typing
 from typing import Union
+from src.database import Database, db_config
+from src.logging_tools import func_status
 
-CHUNK_SIZE:int = 10000
-DATA_PATH:str = 'data\cities.json'
+buff_size:int = 10000
+data_path:str = 'data\cities.json'
 
 @func_status
 def create_db_structures(db:Database) -> None:
@@ -69,6 +86,7 @@ def insert_json_to_db(db:Database, json_path:str) -> None:
         import_data:typing.Dict[str, Union[set[tuple], list[tuple]]] = {
                         'states':set(), 'countries':set(), 'cities':list()
                         }
+        # Reads json file item by item and splits data to buffers
         for record in ijson.items(f, 'item'):
             import_data['states'].add((record['state_id'], 
                                     record['state_code'], 
@@ -83,18 +101,23 @@ def insert_json_to_db(db:Database, json_path:str) -> None:
                                         record['latitude'], 
                                         record['longitude'], 
                                         record['wikiDataId']))
-            if len(import_data['cities'])==CHUNK_SIZE:
+            # Imports and cleans buffers when equal to buff_size
+            # Counting each buffer size separately because 'states' 
+            # and 'countries' data have a lot of duplicates 
+            # (which are deleted by usage SET collection)                        
+            if len(import_data['cities'])==buff_size:
                 db.insert_values(insert_statements['cities'], 
                                 import_data['cities'])
                 import_data['cities'] = list()
-            if len(import_data['states'])==CHUNK_SIZE:
+            if len(import_data['states'])==buff_size:
                 db.insert_values(insert_statements['states'], 
                                 import_data['states'])
                 import_data['states'] = set()
-            if len(import_data['countries'])==CHUNK_SIZE:
+            if len(import_data['countries'])==buff_size:
                 db.insert_values(insert_statements['countries'], 
                                 import_data['countries'])
                 import_data['countries'] = set()
+        # Imports buffers on exit - they can have not imported data
         if len(import_data['cities']):
             db.insert_values(insert_statements['cities'], 
                             import_data['cities'])
@@ -113,8 +136,14 @@ def move_data_from_tmp_table(db:Database) -> None:
 
 @func_status
 def import_data_to_db(db:Database, data_path:str) -> None:
+    # Prepare db structures if not exists
     create_db_structures(db)
+    # Splits json data to tables (normalization)
+    # Because of usage foreign keys, table "cities" can't be load in 1 step
+    # Reading JSON is slow, so "cities" data is inserted into temp table
     insert_json_to_db(db, data_path)
+    # Foreign keys tables are loaded
+    # Move data from tmp table to target table ("cities")
     move_data_from_tmp_table(db)
 
 @func_status
@@ -142,23 +171,24 @@ def import_to_csv(file_name:str, data:list[tuple]) -> None:
 
 @func_status
 def number_of_cities(db:Database, *, country_name:str, 
-                state_name:str) -> None:
+                state_name:str) -> None:         
     data:tuple[list[str], list[tuple]] = select_number_of_cities(db, 
                                                     country_name, state_name)
     import_to_csv(f'Number of cities for {state_name} in {country_name}', 
                 data)
-    print(f"""Number of cities for {state_name} in {country_name}: 
-        {data[1][0][0]}""")
+    city_num:int = data[1][0][0]            
+    print(f'Number of cities for {state_name} in {country_name}: {city_num}')
 
 @func_status
 def main() -> None:
     db_params:typing.Dict[str,str] = db_config(filename='database.ini', 
                                             section='postgresql')
-    db = Database(**db_params) 
-    import_data_to_db(db, DATA_PATH)
+    db = Database(**db_params)
+    # 'import_data_to_db' can be commented if only select is needed
+    import_data_to_db(db, data_path)
     number_of_cities(db, country_name='Poland', 
                 state_name='Masovian Voivodeship')
-
+        
 
 if __name__ == '__main__':
     main()
